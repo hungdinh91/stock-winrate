@@ -1,0 +1,6 @@
+.vs
+.github
+bin
+obj
+UploadedFiles
+/StockAnalyzer/*.user
