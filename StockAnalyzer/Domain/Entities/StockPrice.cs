@@ -13,5 +13,6 @@ namespace StockAnalyzer.Domain.Entities
         public decimal ClosePrice { get; set; }
         public long Volume { get; set; }
         public double Rsi14 { get; set; }
+        public decimal ChangeInPercent { get; set; }
     }
 }

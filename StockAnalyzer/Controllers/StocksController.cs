@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockAnalyzer.Application.Commands;
+using StockAnalyzer.Domain.Dtos;
 using StockAnalyzer.Domain.Entities;
 using StockAnalyzer.Shared.CQRS;
 using StockAnalyzer.Shared.Utils;
@@ -43,7 +44,7 @@ namespace StockAnalyzer.Controllers
 
             var stockPrices = CsvReader.ReadCsv(filePath);
             await _mediator.Send(new InsertStockPricesCommand(stockPrices));
-           
+
             return Ok((DateTime.Now - startTime).Seconds);
         }
 
@@ -53,6 +54,26 @@ namespace StockAnalyzer.Controllers
             var startTime = DateTime.Now;
 
             await _mediator.Send(new CalculateRsi14Command(symbol));
+
+            return Ok((DateTime.Now - startTime).Seconds);
+        }
+
+        [HttpPost("[action]/{symbol}")]
+        public async Task<IActionResult> CalculateWinRate([FromRoute] string symbol, CalculateWinRateDto configDto)
+        {
+            var startTime = DateTime.Now;
+
+            await _mediator.Send(new CalculateWinRateCommand(symbol, configDto));
+
+            return Ok((DateTime.Now - startTime).Seconds);
+        }
+
+        [HttpPost("[action]/{symbol}")]
+        public async Task<IActionResult> CalculateChanges([FromRoute] string symbol)
+        {
+            var startTime = DateTime.Now;
+
+            await _mediator.Send(new CalculateChangesCommand(symbol));
 
             return Ok((DateTime.Now - startTime).Seconds);
         }

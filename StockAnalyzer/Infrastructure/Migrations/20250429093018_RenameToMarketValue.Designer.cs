@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StockAnalyzer.Infrastructure;
 
@@ -11,9 +12,11 @@ using StockAnalyzer.Infrastructure;
 namespace StockAnalyzer.Infrastructure.Migrations
 {
     [DbContext(typeof(StockDbContext))]
-    partial class StockDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250429093018_RenameToMarketValue")]
+    partial class RenameToMarketValue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,9 +117,6 @@ namespace StockAnalyzer.Infrastructure.Migrations
                     b.Property<string>("Symbol")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("TotalCash")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TotalMarketValue")
                         .HasColumnType("decimal(18,2)");

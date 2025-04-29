@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StockAnalyzer.Infrastructure;
 
@@ -11,9 +12,11 @@ using StockAnalyzer.Infrastructure;
 namespace StockAnalyzer.Infrastructure.Migrations
 {
     [DbContext(typeof(StockDbContext))]
-    partial class StockDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250428041348_AddWinRate")]
+    partial class AddWinRate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,38 +25,6 @@ namespace StockAnalyzer.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("StockAnalyzer.Domain.Entities.PriceChange", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("ChangeInPercent")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateOnly>("FromDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Symbol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateOnly>("ToDate")
-                        .HasColumnType("date");
-
-                    b.Property<decimal>("TotalChangePrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("TotalDays")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PriceChanges");
-                });
-
             modelBuilder.Entity("StockAnalyzer.Domain.Entities.StockPrice", b =>
                 {
                     b.Property<int>("Id")
@@ -61,9 +32,6 @@ namespace StockAnalyzer.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("ChangeInPercent")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("ClosePrice")
                         .HasColumnType("decimal(18,2)");
@@ -95,46 +63,6 @@ namespace StockAnalyzer.Infrastructure.Migrations
                     b.HasIndex("Symbol", "Date");
 
                     b.ToTable("StockPrices");
-                });
-
-            modelBuilder.Entity("StockAnalyzer.Domain.Entities.Transaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Symbol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("TotalCash")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalMarketValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<long>("Volume")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("WinRateId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Date");
-
-                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("StockAnalyzer.Domain.Entities.WinRate", b =>
@@ -193,15 +121,8 @@ namespace StockAnalyzer.Infrastructure.Migrations
                     b.Property<decimal?>("ContinueSellAtRsi2")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("CutLossRateInPercent")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal>("SellAtRsi")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Symbol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("WinRateAfter10Year")
                         .HasColumnType("decimal(18,2)");

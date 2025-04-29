@@ -43,6 +43,15 @@ public class InsertStockPricesCommandHandler : IRequestHandler<InsertStockPrices
             }
         }
 
+        var groupPrices = stockPrices.GroupBy(x => x.Symbol).Select(x => new { x.Key, Prices = x.OrderBy(y => y.Date).ToList() });
+        foreach (var group in groupPrices)
+        {
+            for (int i = 1; i < group.Prices.Count; i++)
+            {
+                group.Prices[i].ChangeInPercent = (group.Prices[i].ClosePrice - group.Prices[i - 1].ClosePrice) / group.Prices[i - 1].ClosePrice * 100;
+            }
+        }
+
         if (stockPrices.Any())
         {
             await _stockDbContext.BulkInsertAsync(stockPrices);
