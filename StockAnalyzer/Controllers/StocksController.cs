@@ -63,9 +63,9 @@ namespace StockAnalyzer.Controllers
         {
             var startTime = DateTime.Now;
 
-            await _mediator.Send(new CalculateWinRateCommand(symbol, configDto));
+            var winrate = await _mediator.Send(new CalculateWinRateCommand(symbol, configDto));
 
-            return Ok((DateTime.Now - startTime).Seconds);
+            return Ok(winrate);
         }
 
         [HttpPost("[action]/{symbol}")]

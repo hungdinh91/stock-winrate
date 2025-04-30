@@ -19,4 +19,5 @@ public class Transaction : BaseEntity
     public decimal Price { get; set; }
     public decimal TotalMarketValue { get; set; }
     public decimal TotalCash { get; set; }
+    public string? Description { get; set; }
 }

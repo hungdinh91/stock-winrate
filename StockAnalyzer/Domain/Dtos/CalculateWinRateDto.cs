@@ -12,4 +12,5 @@ public class CalculateWinRateDto
     public decimal CutLossRateInPercent { get; set; } = 7;
 
     public decimal BalanceZero { get; set; } = 1000000000;
+    public string InvestFrom { get; set; } = "2010-01-01";
 }
