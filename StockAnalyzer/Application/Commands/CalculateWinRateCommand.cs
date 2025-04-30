@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Operation.Overlay;
 using StockAnalyzer.Domain.Dtos;
 using StockAnalyzer.Domain.Entities;
 using StockAnalyzer.Infrastructure;
@@ -21,6 +22,8 @@ public class CalculateWinRateCommand : CalculateWinRateDto, IRequest<WinRate>
         ContinueSellAtRsi1 = dto.ContinueSellAtRsi1;
         ContinueSellAtRsi2 = dto.ContinueSellAtRsi2;
         CutLossRateInPercent = dto.CutLossRateInPercent;
+        MaxDayTransAmount = dto.MaxDayTransAmount;
+        MonthlyInvestAmount = dto.MonthlyInvestAmount;
 
         if (!DateOnly.TryParse(dto.InvestFrom, out DateOnly date)) throw new ArgumentException("InvestFrom is not valid");
         InvestFrom = date;
@@ -50,6 +53,8 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             .Where(x => x.ContinueSellAtRsi2 == request.ContinueSellAtRsi2)
             .Where(x => x.CutLossRateInPercent == request.CutLossRateInPercent)
             .Where(x => x.InvestFrom == request.InvestFrom)
+            .Where(x => x.MaxDayTransAmount == request.MaxDayTransAmount)
+            .Where(x => x.MonthlyInvestAmount == request.MonthlyInvestAmount)
             .FirstOrDefaultAsync();
 
         var obsoltetedTrans = new List<Transaction>();
@@ -76,6 +81,8 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             BalanceZero = request.BalanceZero,
             CutLossRateInPercent = request.CutLossRateInPercent,
             InvestFrom = request.InvestFrom,
+            MaxDayTransAmount = request.MaxDayTransAmount,
+            MonthlyInvestAmount = request.MonthlyInvestAmount
         };
 
         for (var i = 0; i < stockPrices.Count - 1; i++)
@@ -86,6 +93,13 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             var winCount = 0;
             var lossCount = 0;
             if (thisDayStockPrice.Date < request.InvestFrom) continue;
+
+            // if second day of month, add MonthlyInvestAmount to balance
+            if (stockPrices[i - 1].Date.Month == stockPrices[i].Date.Month && stockPrices[i - 1].Date.Month != stockPrices[i - 2].Date.Month)
+            {
+                balance += request.MonthlyInvestAmount;
+            }
+
 
             // Sell
             if (holdingStock.Quantity > 0 && (theNextDayStockPrice.Date.DayNumber - holdingStock.BuyDate.DayNumber) > 2)
@@ -114,14 +128,17 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             }
 
             // Buy
-            if (balance > theNextDayStockPrice.OpenPrice * 100 && ShouldBuy(stockPrices[i], request.BuyAtRsi))
+            if (balance > theNextDayStockPrice.OpenPrice * 100 && ShouldBuy(stockPrices[i], request.BuyAtRsi) && request.MaxDayTransAmount >= theNextDayStockPrice.OpenPrice * 100)
             {
                 // Buy in next day open price
-                var quantity = balance / theNextDayStockPrice.OpenPrice;
-                holdingStock.Quantity = (long)quantity;
+                var cashToBuy = balance > request.MaxDayTransAmount ? request.MaxDayTransAmount : balance;
+                var quantity = (long)(cashToBuy / theNextDayStockPrice.OpenPrice);
+
+                holdingStock.Quantity += quantity;
                 holdingStock.BuyPrice = theNextDayStockPrice.OpenPrice;
                 holdingStock.BuyDate = theNextDayStockPrice.Date;
-                balance -= holdingStock.Quantity * theNextDayStockPrice.OpenPrice;
+                balance -= quantity * theNextDayStockPrice.OpenPrice;
+
                 trans.Add(new Transaction
                 {
                     Symbol = request.Symbol,

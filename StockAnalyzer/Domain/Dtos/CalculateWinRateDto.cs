@@ -13,4 +13,6 @@ public class CalculateWinRateDto
 
     public decimal BalanceZero { get; set; } = 1000000000;
     public string InvestFrom { get; set; } = "2010-01-01";
+    public decimal MaxDayTransAmount { get; set; }
+    public decimal MonthlyInvestAmount { get; set; }
 }

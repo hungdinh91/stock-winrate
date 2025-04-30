@@ -14,6 +14,8 @@
 
         public decimal BalanceZero { get; set; }
         public DateOnly InvestFrom { get; set; }
+        public decimal MaxDayTransAmount { get; set; }
+        public decimal MonthlyInvestAmount { get; set; }
 
         public decimal BalanceAfter1Year { get; set; }
         public decimal BalanceAfter2Year { get; set; }
