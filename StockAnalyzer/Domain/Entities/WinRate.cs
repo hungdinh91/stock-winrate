@@ -27,6 +27,13 @@
         public decimal BalanceAfter8Year { get; set; }
         public decimal BalanceAfter9Year { get; set; }
         public decimal BalanceAfter10Year { get; set; }
+        public decimal BalanceAfter11Year { get; set; }
+        public decimal BalanceAfter12Year { get; set; }
+        public decimal BalanceAfter13Year { get; set; }
+        public decimal BalanceAfter14Year { get; set; }
+        public decimal BalanceAfter15Year { get; set; }
+        public decimal BalanceFinal { get; set; }
+
 
         // WinRate = Win Count / (Win Count + Loss Count)
         public decimal WinRateAfter1Year { get; set; }

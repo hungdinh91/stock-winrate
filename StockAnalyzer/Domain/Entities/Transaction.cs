@@ -20,4 +20,6 @@ public class Transaction : BaseEntity
     public decimal TotalMarketValue { get; set; }
     public decimal TotalCash { get; set; }
     public string? Description { get; set; }
+    public decimal HoldingOriginalCash { get; set; }
+    public decimal HoldingWinLossInPercent { get; set; }
 }

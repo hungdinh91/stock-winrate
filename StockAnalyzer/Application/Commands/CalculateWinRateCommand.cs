@@ -85,7 +85,7 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             MonthlyInvestAmount = request.MonthlyInvestAmount
         };
 
-        for (var i = 0; i < stockPrices.Count - 1; i++)
+        for (var i = 0; i < stockPrices.Count - 2; i++)
         {
             if (i + 1 < 14) continue;
             var thisDayStockPrice = stockPrices[i];
@@ -99,7 +99,6 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             {
                 balance += request.MonthlyInvestAmount;
             }
-
 
             // Sell
             if (holdingStock.Quantity > 0 && (theNextDayStockPrice.Date.DayNumber - holdingStock.BuyDate.DayNumber) > 2)
@@ -134,10 +133,13 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
                 var cashToBuy = balance > request.MaxDayTransAmount ? request.MaxDayTransAmount : balance;
                 var quantity = (long)(cashToBuy / theNextDayStockPrice.OpenPrice);
 
+                holdingStock.AvgBuyPrice = (holdingStock.Quantity * holdingStock.AvgBuyPrice + quantity * theNextDayStockPrice.OpenPrice) / (holdingStock.Quantity + quantity);
                 holdingStock.Quantity += quantity;
-                holdingStock.BuyPrice = theNextDayStockPrice.OpenPrice;
                 holdingStock.BuyDate = theNextDayStockPrice.Date;
+
+
                 balance -= quantity * theNextDayStockPrice.OpenPrice;
+                var totalMarketValue = holdingStock.Quantity * theNextDayStockPrice.OpenPrice;
 
                 trans.Add(new Transaction
                 {
@@ -145,9 +147,11 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
                     Date = theNextDayStockPrice.Date,
                     Price = theNextDayStockPrice.OpenPrice,
                     Volume = holdingStock.Quantity,
-                    TotalMarketValue = holdingStock.Quantity * theNextDayStockPrice.OpenPrice,
+                    TotalMarketValue = totalMarketValue,
                     TotalCash = balance,
                     Type = TransactionType.Buy,
+                    HoldingOriginalCash = holdingStock.TotalOriginalCash,
+                    HoldingWinLossInPercent = holdingStock.TotalOriginalCash > 0 ? (totalMarketValue - holdingStock.TotalOriginalCash) / holdingStock.TotalOriginalCash * 100 : 0
                 });
             }
 
@@ -164,7 +168,16 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             if (dayCount >= 52 * 5 * 7 && winRate.BalanceAfter7Year == 0) { winRate.BalanceAfter7Year = totalBalance; winRate.WinRateAfter7Year = winRateInPercent; }
             if (dayCount >= 52 * 5 * 8 && winRate.BalanceAfter8Year == 0) { winRate.BalanceAfter8Year = totalBalance; winRate.WinRateAfter8Year = winRateInPercent; }
             if (dayCount >= 52 * 5 * 9 && winRate.BalanceAfter9Year == 0) { winRate.BalanceAfter9Year = totalBalance; winRate.WinRateAfter9Year = winRateInPercent; }
-            if (dayCount >= 52 * 5 * 10 && winRate.BalanceAfter10Year == 0) { winRate.BalanceAfter10Year = totalBalance; winRate.WinRateAfter10Year = winRateInPercent; }
+            if (dayCount >= 52 * 5 * 10 && winRate.BalanceAfter10Year == 0) { winRate.BalanceAfter10Year = totalBalance; }
+            if (dayCount >= 52 * 5 * 11 && winRate.BalanceAfter11Year == 0) { winRate.BalanceAfter11Year = totalBalance; }
+            if (dayCount >= 52 * 5 * 12 && winRate.BalanceAfter12Year == 0) { winRate.BalanceAfter12Year = totalBalance; }
+            if (dayCount >= 52 * 5 * 13 && winRate.BalanceAfter13Year == 0) { winRate.BalanceAfter13Year = totalBalance; }
+            if (dayCount >= 52 * 5 * 14 && winRate.BalanceAfter14Year == 0) { winRate.BalanceAfter14Year = totalBalance; }
+            if (dayCount >= 52 * 5 * 15 && winRate.BalanceAfter15Year == 0) { winRate.BalanceAfter15Year = totalBalance; }
+            if (i == stockPrices.Count - 1)
+            {
+                winRate.BalanceFinal = balance + holdingStock.Quantity * thisDayStockPrice.ClosePrice;
+            }
         }
 
         using (var dbTrans = await _stockDbContext.Database.BeginTransactionAsync())
