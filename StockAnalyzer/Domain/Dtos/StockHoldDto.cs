@@ -2,10 +2,12 @@
 
 public class StockHoldDto
 {
-    public long Quantity { get; set; }
+    public long TotalQuantity { get { return SellableQuantity + KeptHoldingStocks.Sum(x => x.Quantity); } }
     public decimal AvgBuyPrice { get; set; }
-    public DateOnly BuyDate { get; set; }
-    public decimal TotalOriginalCash { get { return Quantity * AvgBuyPrice; } }
+    public DateOnly LastBuyDate { get; set; }
+    public decimal TotalOriginalCash { get; set; }
+    public long SellableQuantity { get; set; }
+    public List<KeptHoldingStock> KeptHoldingStocks { get; set; } = new List<KeptHoldingStock>();
 
     public decimal GetEarningInPercent(decimal currentPrice)
     {
@@ -14,6 +16,29 @@ public class StockHoldDto
 
     public decimal GetAssetValue(decimal currentPrice)
     {
-        return currentPrice * Quantity;
+        return currentPrice * TotalQuantity;
     }
+
+    public void BuyMore(long quantity, DateOnly date, decimal cashUsed)
+    {
+        LastBuyDate = date;
+        TotalOriginalCash += cashUsed;
+        KeptHoldingStocks.Add(new KeptHoldingStock { Quantity = quantity, BuyDate = date });
+        AvgBuyPrice = TotalOriginalCash / TotalQuantity;
+    }
+
+    public void AddjustSellableQty(DateOnly date)
+    {
+        var sellableHistories = KeptHoldingStocks.Where(x => x.BuyDate.AddDays(3) <= date).ToList();
+        sellableHistories.ForEach(x => KeptHoldingStocks.Remove(x));
+        SellableQuantity += sellableHistories.Sum(x => x.Quantity);
+    }
+
+    
+}
+
+public class KeptHoldingStock
+{
+    public long Quantity { get; set; }
+    public DateOnly BuyDate { get; set; }
 }

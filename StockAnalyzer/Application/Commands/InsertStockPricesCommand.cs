@@ -49,6 +49,9 @@ public class InsertStockPricesCommandHandler : IRequestHandler<InsertStockPrices
             for (int i = 1; i < group.Prices.Count; i++)
             {
                 group.Prices[i].ChangeInPercent = (group.Prices[i].ClosePrice - group.Prices[i - 1].ClosePrice) / group.Prices[i - 1].ClosePrice * 100;
+                var avgVolumeFromIndex = i - 59;
+                if (avgVolumeFromIndex < 0) avgVolumeFromIndex = 0;
+                group.Prices[i].AvgVolume60 = (long)group.Prices.Skip(avgVolumeFromIndex).Take(60).Average(x => x.Volume);
             }
         }
 

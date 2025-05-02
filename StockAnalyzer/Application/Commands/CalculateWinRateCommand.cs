@@ -94,14 +94,18 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             var lossCount = 0;
             if (thisDayStockPrice.Date < request.InvestFrom) continue;
 
+            holdingStock.AddjustSellableQty(thisDayStockPrice.Date);
+
             // if second day of month, add MonthlyInvestAmount to balance
             if (stockPrices[i - 1].Date.Month == stockPrices[i].Date.Month && stockPrices[i - 1].Date.Month != stockPrices[i - 2].Date.Month)
             {
                 balance += request.MonthlyInvestAmount;
             }
 
+            bool isTryingToSell = false;
+
             // Sell
-            if (holdingStock.Quantity > 0 && (theNextDayStockPrice.Date.DayNumber - holdingStock.BuyDate.DayNumber) > 2)
+            if (holdingStock.SellableQuantity > 0)
             {
                 var erarningInPercent = holdingStock.GetEarningInPercent(thisDayStockPrice.ClosePrice);
 
@@ -109,54 +113,61 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
                 if (erarningInPercent < -request.CutLossRateInPercent || ShouldSell(thisDayStockPrice, request.SellAtRsi))
                 {
                     // sell with next day open price
-                    balance += holdingStock.Quantity * theNextDayStockPrice.OpenPrice;
+                    balance += holdingStock.SellableQuantity * theNextDayStockPrice.OpenPrice;
                     trans.Add(new Transaction
                     {
                         Symbol = request.Symbol,
                         Date = theNextDayStockPrice.Date,
                         Price = theNextDayStockPrice.OpenPrice,
-                        Volume = holdingStock.Quantity,
-                        TotalCash = balance + holdingStock.Quantity * theNextDayStockPrice.OpenPrice,
+                        Volume = holdingStock.SellableQuantity,
+                        TotalCash = balance + holdingStock.SellableQuantity * theNextDayStockPrice.OpenPrice,
                         Type = TransactionType.Sell,
                         Description = erarningInPercent < -request.CutLossRateInPercent ? "Cut loss " : "RSI low"
                     });
-                    holdingStock.Quantity = 0;
+
+                    holdingStock.TotalOriginalCash -= holdingStock.SellableQuantity * holdingStock.AvgBuyPrice;
+                    holdingStock.SellableQuantity = 0;
+                    isTryingToSell = true;
                 }
 
                 if (erarningInPercent > 0) winCount++; else if (erarningInPercent < 0) lossCount++;
             }
 
             // Buy
-            if (balance > theNextDayStockPrice.OpenPrice * 100 && ShouldBuy(stockPrices[i], request.BuyAtRsi) && request.MaxDayTransAmount >= theNextDayStockPrice.OpenPrice * 100)
+            if (balance > theNextDayStockPrice.OpenPrice * 100 
+                && ShouldBuy(stockPrices[i], request.BuyAtRsi) 
+                && request.MaxDayTransAmount >= theNextDayStockPrice.OpenPrice * 100
+                && !isTryingToSell)
             {
+                var totalMarketValue = holdingStock.TotalQuantity * theNextDayStockPrice.OpenPrice;
+                var beforeWinlossInPercent = holdingStock.TotalOriginalCash > 0 ? (totalMarketValue - holdingStock.TotalOriginalCash) / holdingStock.TotalOriginalCash * 100 : 0;
+
                 // Buy in next day open price
                 var cashToBuy = balance > request.MaxDayTransAmount ? request.MaxDayTransAmount : balance;
                 var quantity = (long)(cashToBuy / theNextDayStockPrice.OpenPrice);
+                cashToBuy = quantity * theNextDayStockPrice.OpenPrice;
 
-                holdingStock.AvgBuyPrice = (holdingStock.Quantity * holdingStock.AvgBuyPrice + quantity * theNextDayStockPrice.OpenPrice) / (holdingStock.Quantity + quantity);
-                holdingStock.Quantity += quantity;
-                holdingStock.BuyDate = theNextDayStockPrice.Date;
-
-
-                balance -= quantity * theNextDayStockPrice.OpenPrice;
-                var totalMarketValue = holdingStock.Quantity * theNextDayStockPrice.OpenPrice;
+                holdingStock.BuyMore(quantity, theNextDayStockPrice.Date, cashToBuy);
+                balance -= cashToBuy;
+                totalMarketValue = holdingStock.TotalQuantity * theNextDayStockPrice.OpenPrice;
 
                 trans.Add(new Transaction
                 {
                     Symbol = request.Symbol,
                     Date = theNextDayStockPrice.Date,
                     Price = theNextDayStockPrice.OpenPrice,
-                    Volume = holdingStock.Quantity,
+                    Volume = holdingStock.TotalQuantity,
                     TotalMarketValue = totalMarketValue,
                     TotalCash = balance,
                     Type = TransactionType.Buy,
                     HoldingOriginalCash = holdingStock.TotalOriginalCash,
-                    HoldingWinLossInPercent = holdingStock.TotalOriginalCash > 0 ? (totalMarketValue - holdingStock.TotalOriginalCash) / holdingStock.TotalOriginalCash * 100 : 0
+                    HoldingWinLossInPercent = holdingStock.TotalOriginalCash > 0 ? (totalMarketValue - holdingStock.TotalOriginalCash) / holdingStock.TotalOriginalCash * 100 : 0,
+                    BeforeWinLossInPercent = beforeWinlossInPercent
                 });
             }
 
             // Update winrate and balance after each period
-            var totalBalance = balance + holdingStock.Quantity * theNextDayStockPrice.OpenPrice;
+            var totalBalance = balance + holdingStock.TotalQuantity * theNextDayStockPrice.OpenPrice;
             var winRateInPercent = winCount + lossCount > 0 ? (decimal)winCount / (winCount + lossCount) : 0;
             var dayCount = (thisDayStockPrice.Date.DayNumber - request.InvestFrom.DayNumber);
             if (dayCount >= 52 * 5 * 1 && winRate.BalanceAfter1Year == 0) { winRate.BalanceAfter1Year = totalBalance; winRate.WinRateAfter1Year = winRateInPercent; }
@@ -176,7 +187,7 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             if (dayCount >= 52 * 5 * 15 && winRate.BalanceAfter15Year == 0) { winRate.BalanceAfter15Year = totalBalance; }
             if (i == stockPrices.Count - 1)
             {
-                winRate.BalanceFinal = balance + holdingStock.Quantity * thisDayStockPrice.ClosePrice;
+                winRate.BalanceFinal = balance + holdingStock.TotalQuantity * thisDayStockPrice.ClosePrice;
             }
         }
 
@@ -210,7 +221,7 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
 
     private bool ShouldBuy(StockPrice stockPrice, decimal rsiBuy)
     {
-        return stockPrice.Rsi14 < (double)rsiBuy;
+        return stockPrice.Rsi14 < (double)rsiBuy && stockPrice.Volume > stockPrice.AvgVolume60;
     }
 
     private bool ShouldSell(StockPrice stockPrice, decimal rsiSell)

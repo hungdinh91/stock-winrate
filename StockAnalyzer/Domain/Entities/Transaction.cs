@@ -22,4 +22,5 @@ public class Transaction : BaseEntity
     public string? Description { get; set; }
     public decimal HoldingOriginalCash { get; set; }
     public decimal HoldingWinLossInPercent { get; set; }
+    public decimal BeforeWinLossInPercent { get; set; }
 }
