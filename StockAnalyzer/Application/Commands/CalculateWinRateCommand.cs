@@ -134,8 +134,8 @@ public class CalculateWinRateCommandHandler : IRequestHandler<CalculateWinRateCo
             }
 
             // Buy
-            if (balance > theNextDayStockPrice.OpenPrice * 100 
-                && ShouldBuy(stockPrices[i], request.BuyAtRsi) 
+            if (balance > theNextDayStockPrice.OpenPrice * 100
+                && ShouldBuy(stockPrices[i], request.BuyAtRsi)
                 && request.MaxDayTransAmount >= theNextDayStockPrice.OpenPrice * 100
                 && !isTryingToSell)
             {

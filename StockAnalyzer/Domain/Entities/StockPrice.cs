@@ -14,6 +14,8 @@ namespace StockAnalyzer.Domain.Entities
         public long Volume { get; set; }
         public double Rsi14 { get; set; }
         public decimal ChangeInPercent { get; set; }
+        public long AvgVolume20 { get; set; }
+        public long AvgVolume40 { get; set; }
         public long AvgVolume60 { get; set; }
     }
 }

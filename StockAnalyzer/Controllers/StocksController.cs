@@ -48,12 +48,12 @@ namespace StockAnalyzer.Controllers
             return Ok((DateTime.Now - startTime).Seconds);
         }
 
-        [HttpPost("[action]/{symbol}")]
-        public async Task<IActionResult> CalculateRsi14(string symbol)
+        [HttpPost("[action]")]
+        public async Task<IActionResult> CalculateRsi14()
         {
             var startTime = DateTime.Now;
 
-            await _mediator.Send(new CalculateRsi14Command(symbol));
+            await _mediator.Send(new CalculateRsi14Command());
 
             return Ok((DateTime.Now - startTime).Seconds);
         }
